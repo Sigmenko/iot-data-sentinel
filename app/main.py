@@ -18,3 +18,7 @@ async def add_telemetry(telemetry: Telemetry, db: Session = Depends(get_db)):
     db.refresh(new_record)
 
     return new_record
+@app.get('/telemetry/')
+async def get_last_telemetry(db: Session = Depends(get_db)):
+    record = db.query(models.TelemetryRecord).order_by(models.TelemetryRecord.id.desc()).limit(5).all()
+    return record
