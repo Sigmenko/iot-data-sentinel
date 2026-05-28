@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db import models
 from app.db.database import engine, get_db
 from sqlalchemy import func
+from datetime import datetime
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
@@ -20,9 +21,13 @@ async def add_telemetry(telemetry: Telemetry, db: Session = Depends(get_db)):
 
     return new_record
 @app.get('/telemetry/')
-async def get_last_telemetry(db: Session = Depends(get_db)):
-    record = db.query(models.TelemetryRecord).order_by(models.TelemetryRecord.id.desc()).limit(5).all()
-    return record
+async def get_last_telemetry(limit: int = 5, device_id: str | None = None, db: Session = Depends(get_db)):
+    query = db.query(models.TelemetryRecord)
+
+    if device_id:
+        query = query.filter(models.TelemetryRecord.device_id == device_id)
+
+    return query.order_by(models.TelemetryRecord.id.desc().limit(limit).all())
 
 @app.get('/analytic/')
 async def analysis(db: Session = Depends(get_db)):
@@ -35,4 +40,11 @@ async def analysis(db: Session = Depends(get_db)):
         'total count records': count_records,
         'avg temperature': avg_temp,
         'max humidity': max_hum
+    }
+@app.get("/health/")
+async def get_health():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "service": "IoT Data Sentinel"
     }
