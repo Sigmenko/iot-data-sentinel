@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey
 from app.db.database import Base
+import hashlib
 
 class TelemetryRecord(Base):
     __tablename__ = "telemetry_data"
@@ -26,8 +27,9 @@ class HubDevice(Base):
 class SatTelemetryDHT11(Base):
     __tablename__ = "sat_telemetry_dht11"
 
+    # Складений первинний ключ: Хеш Хаба + Час завантаження
     device_hash_key = Column(String, ForeignKey('device_hub.device_hash_key'), primary_key=True)
-    load_data = Column(DateTime, primary_key=True, nullable=False)
+    load_data = Column(DateTime, nullable=False)
     source_data = Column(String, nullable=False)
 
     temperature = Column(Float)

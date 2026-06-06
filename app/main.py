@@ -7,18 +7,29 @@ from app.db import models
 from app.db.database import engine, get_db
 from sqlalchemy import func
 from datetime import datetime
+from app.services.elt_service import load_telemetry_to_vault
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 
 @app.post('/ingest/')
 async def add_telemetry(telemetry: Telemetry, db: Session = Depends(get_db)):
+    #staging
     processed_data = data_proces(telemetry)
     new_record = models.TelemetryRecord(**processed_data)
     db.add(new_record)
+
+    # DV 2.0
+    load_telemetry_to_vault(
+        db_session=db,
+        mac_address=processed_data['device_id'],
+        temperature=processed_data['temperature'],
+        humidity=processed_data['humidity'],
+        timestamp=processed_data['timestamp']  # Ось цей залізний рядок
+    )
+
     db.commit()
     db.refresh(new_record)
-
     return new_record
 @app.get('/telemetry/')
 async def get_last_telemetry(limit: int = 5, device_id: str | None = None, db: Session = Depends(get_db)):
